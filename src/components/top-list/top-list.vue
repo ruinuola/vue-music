@@ -1,15 +1,15 @@
 <template>
   <transition name="slide">
-    <music-list :title="title" :bg-image="bgImage"></music-list>
+    <music-list :rank="rank" :title="title" :bg-image="bgImage" :songs="songs"></music-list>
   </transition>
 </template>
 
 <script type="text/ecmascript-6">
   import MusicList from 'components/music-list/music-list'
   import {mapGetters} from 'vuex'
-//  import {getTopList} from 'api/rank'
-//  import {ERR_OK} from 'api/config'
-//  import {playlistMixin} from 'common/js/mixin'
+  import {getMusicList} from 'api/rank'
+  import {ERR_OK} from 'api/config'
+  import {createSong} from 'common/js/song'
 
   export default {
 //    mixins: [playlistMixin],
@@ -24,11 +24,37 @@
         'topList'
       ])
     },
+    created() {
+      this._getMusicList()
+    },
+    data() {
+      return {
+        songs: [],
+        rank: true
+      }
+    },
     methods: {
-//      handlePlaylist(playlist) {
-//        const bottom = playlist.length > 0 ? '60px' : ''
-//        this.$refs.rank.style.bottom = bottom
-//      },
+      _getMusicList() {
+        if (!this.topList.id) {
+          this.$router.push('/rank')
+          return
+        }
+        getMusicList(this.topList.id).then((res) => {
+          if (res.code === ERR_OK) {
+            this.songs = this._normalizeSongs(res.songlist)
+          }
+        })
+      },
+      _normalizeSongs(list) {
+        let ret = []
+        list.forEach((item) => {
+          const musicData = item.data
+          if (musicData.songid && musicData.albumid) {
+            ret.push(createSong(musicData))
+          }
+        })
+        return ret
+      }
     },
     components: {
       MusicList
